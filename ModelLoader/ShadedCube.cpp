@@ -15,6 +15,11 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 #include <iostream>
+#include <vector>
+#include <fstream>
+#include <string>
+
+using namespace std;
 
 // to use this example you will need to download the header files for GLM put them into a folder which you will reference in
 // properties -> VC++ Directories -> libraries
@@ -254,13 +259,174 @@ init(void)
 		0.0f, 0.0f
 	};*/
 
+	// file load and parse
+
+	vector<glm::vec3> temp_vertices;
+	vector<glm::vec2> temp_textures;
+	vector<glm::vec3> temp_normals;
+	vector<int> vertex_indices, normal_indices, uv_indices, indices;
+
+	vector<glm::vec3> vertices;
+	vector<glm::vec2> textures;
+	vector<glm::vec3> normals;
+
+	std::string line;
+	ifstream myFile("media/Creeper.obj");
+
+	if (myFile.is_open())
+	{
+		while (getline(myFile, line))
+		{
+			vector<std::string> strings;
+
+			//split string by spaces
+			std::string delimiter = " ";
+
+			size_t pos = 0;
+			std::string token;
+			while ((pos = line.find(delimiter)) != std::string::npos) { // there is a string
+				token = line.substr(0, pos);
+				line.erase(0, pos + delimiter.length());
+				strings.push_back(token);
+			}
+			strings.push_back(line); // push last substring in line
+
+			if (strings[0] == "v") //first sub-string starts with v
+			{
+				//convert sub-strings 1-3 to glfloat
+				float x = std::stof(strings[1]);
+				float y = std::stof(strings[2]);
+				float z = std::stof(strings[3]);
+
+				//feed those into the vector vertices
+				glm::vec3 vertex;
+				vertex.x = x;
+				vertex.y = y;
+				vertex.z = z;
+
+				temp_vertices.push_back(vertex);
+			}
+			else if (strings[0] == "vt") //first sub-string starts with vt
+			{
+				//convert sub-strings 1-3 to glfloat
+				float x = std::stof(strings[1]);
+				float y = std::stof(strings[2]);
+
+				//feed those into the vector vertices
+				glm::vec2 texture;
+				texture.x = x;
+				texture.y = y;
+
+				temp_textures.push_back(texture);
+			}
+			else if (strings[0] == "vn") //first sub-string starts with vn
+			{
+				//convert sub-strings 1-3 to glfloat
+				float x = std::stof(strings[1]);
+				float y = std::stof(strings[2]);
+				float z = std::stof(strings[3]);
+
+				//feed those into the vector vertices
+				glm::vec3 normal;
+				normal.x = x;
+				normal.y = y;
+				normal.z = z;
+
+				temp_normals.push_back(normal);
+			}
+			else if (strings[0] == "f") { // faces if substring 0 is f {
+				if (strings.size() == 5) { // quad
+
+					// initialise temp quads vector
+					vector<unsigned int> vertex_indices_quads;
+
+					// for each string in strings split on slash
+					for (int i = 1; i < strings.size(); i++) { // ignore f(i=0)
+						string face = strings[i];
+						vector<std::string> face_strings;
+
+						//split string by slashes
+						std::string delimiter = "/";
+
+						size_t pos = 0;
+						std::string token;
+						while ((pos = face.find(delimiter)) != std::string::npos) { // there is a string
+							token = face.substr(0, pos);
+							face.erase(0, pos + delimiter.length());
+							face_strings.push_back(token);
+						}
+						face_strings.push_back(face); // push last substring in face
+
+						// convert to int (MAYBE GLFLOAT???)
+						float vertex = std::stoi(face_strings[0]);
+						float uv = std::stoi(face_strings[1]);
+						float normal = std::stoi(face_strings[2]);
+
+						// put into quads array(THINK DO THIS FOR ALL???)
+						vertex_indices_quads.push_back(vertex);
+						uv_indices.push_back(uv);
+						normal_indices.push_back(normal);
+					}
+
+					// convert to triangles and put into vertex_indices
+					int one = vertex_indices_quads[0];
+					int two = vertex_indices_quads[1];
+					int three = vertex_indices_quads[2];
+					int four = vertex_indices_quads[3];
+
+					vertex_indices.push_back(one);
+					vertex_indices.push_back(two);
+					vertex_indices.push_back(three);
+
+					vertex_indices.push_back(three);
+					vertex_indices.push_back(four);
+					vertex_indices.push_back(one);
+
+					// put all indices into single vec3 and index
+					for (unsigned int i = 0; i < vertex_indices.size(); i++) {
+						unsigned int vertexIndex = vertex_indices[i];
+						glm::vec3 vertex = temp_vertices[vertexIndex - 1];
+						vertices.push_back(vertex);
+						indices.push_back(i);
+					}
+					for (unsigned int i = 0; i < uv_indices.size(); i++) {
+						unsigned int uvIndex = uv_indices[i];
+						glm::vec2 uv = temp_textures[uvIndex - 1];
+						textures.push_back(uv);
+					}
+					for (unsigned int i = 0; i < normal_indices.size(); i++) {
+						unsigned int normalIndex = normal_indices[i];
+						glm::vec3 normal = temp_normals[normalIndex - 1];
+						normals.push_back(normal);
+					}
+				}
+			}
+			//{
+			//	//if there are 5 substrings it means we have a quad
+			//	//else if there are 4 substrings we have a triangle
+			//	// else ignore and give warning
+			// std::cout << line << "\n";
+		}
+
+
+	}
+	//
+	//		//vector<GLuint> fix_indices;
+	//		//vector<GLuint> fix_vertices; //will be length 24 for creeper instead of 8
+	//
+	//		////for (length of vector indices)
+	//		//if index > length of vertices
+	//
+	//
+	//}
+
 	glGenBuffers(NumBuffers, Buffers);
 	
 	glBindBuffer(GL_ARRAY_BUFFER, Buffers[Triangles]);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(glm::vec3), &vertices[0], GL_STATIC_DRAW);
 
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, Buffers[Indices]);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(int), &indices[0], GL_STATIC_DRAW);
 
 	
 
@@ -277,7 +443,7 @@ init(void)
 
 	//Colour Binding
 	glBindBuffer(GL_ARRAY_BUFFER, Buffers[Normals]);
-	glBufferStorage(GL_ARRAY_BUFFER, sizeof(normals), normals, 0);
+	glBufferStorage(GL_ARRAY_BUFFER, normals.size() * sizeof(glm::vec3), &normals[0], 0);
 
 
 	glVertexAttribPointer(Normals, 3, GL_FLOAT,
@@ -285,7 +451,7 @@ init(void)
 
 	//Texture Binding
 	glBindBuffer(GL_ARRAY_BUFFER, Buffers[Textures]);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(texture_coords), texture_coords, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, textures.size() * sizeof(glm::vec2), &textures[0], GL_STATIC_DRAW);
 	glVertexAttribPointer(Textures, 2, GL_FLOAT,
 		GL_FALSE, 0, BUFFER_OFFSET(0));
 
@@ -305,7 +471,7 @@ init(void)
 	// load image, create texture and generate mipmaps
 	GLint width, height, nrChannels;
 	stbi_set_flip_vertically_on_load(false); // tell stb_image.h to flip loaded texture's on the y-axis.
-	unsigned char* data = stbi_load("media/textures/awesomeface.png", &width, &height, &nrChannels, 0);
+	unsigned char* data = stbi_load("media/textures/Texture.png", &width, &height, &nrChannels, 0);
 	if (data)
 	{
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
@@ -369,13 +535,13 @@ display(GLfloat delta)
 	glClear(GL_COLOR_BUFFER_BIT);
 
 	// bind textures on corresponding texture units
-	glFrontFace(GL_CW);
-	glCullFace(GL_BACK);
+	// glFrontFace(GL_CW);
+	// glCullFace(GL_BACK);
 	glEnable(GL_CULL_FACE);
 	// creating the model matrix
 	glm::mat4 model = glm::mat4(1.0f);
 	model = glm::scale(model, glm::vec3(2.0f, 2.0f, 2.0f));
-	model = glm::rotate(model, glm::radians(delta), glm::vec3(1.0f, 0.0f, 0.0f));
+	model = glm::rotate(model, glm::radians(delta * 5.0f), glm::vec3(1.0f, 0.0f, 0.0f)); // GET RID OF * 0.5f AND SEE IF WORKS BECAUSE COPIED
 
 
 	// creating the view matrix
@@ -416,7 +582,7 @@ main(int argc, char** argv)
 {
 	glfwInit();
 
-	GLFWwindow* window = glfwCreateWindow(800, 600, "Shaded Cube", NULL, NULL);
+	GLFWwindow* window = glfwCreateWindow(800, 600, "Model Loader", NULL, NULL);
 
 	glfwMakeContextCurrent(window);
 	glewInit();
