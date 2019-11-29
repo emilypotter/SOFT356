@@ -541,7 +541,7 @@ display(GLfloat delta)
 	// creating the model matrix
 	glm::mat4 model = glm::mat4(1.0f);
 	model = glm::scale(model, glm::vec3(2.0f, 2.0f, 2.0f));
-	model = glm::rotate(model, glm::radians(delta * 5.0f), glm::vec3(1.0f, 0.0f, 0.0f)); // GET RID OF * 0.5f AND SEE IF WORKS BECAUSE COPIED
+	model = glm::rotate(model, glm::radians(delta), glm::vec3(1.0f, 0.0f, 0.0f));
 
 
 	// creating the view matrix
