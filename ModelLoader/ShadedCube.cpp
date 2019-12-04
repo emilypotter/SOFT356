@@ -357,12 +357,12 @@ init(void)
 						}
 						face_strings.push_back(face); // push last substring in face
 
-						// convert to int (MAYBE GLFLOAT???)
+						// convert to int
 						float vertex = std::stoi(face_strings[0]);
 						float uv = std::stoi(face_strings[1]);
 						float normal = std::stoi(face_strings[2]);
 
-						// put into quads array(THINK DO THIS FOR ALL???)
+						// put into quads array
 						vertex_indices_quads.push_back(vertex);
 						uv_indices.push_back(uv);
 						normal_indices.push_back(normal);
@@ -541,7 +541,7 @@ display(GLfloat delta)
 	// creating the model matrix
 	glm::mat4 model = glm::mat4(1.0f);
 	model = glm::scale(model, glm::vec3(2.0f, 2.0f, 2.0f));
-	model = glm::rotate(model, glm::radians(delta), glm::vec3(1.0f, 0.0f, 0.0f));
+	model = glm::rotate(model, glm::radians(delta * 5), glm::vec3(1.0f, 0.0f, 0.0f));
 
 
 	// creating the view matrix
